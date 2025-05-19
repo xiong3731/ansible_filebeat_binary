@@ -76,7 +76,7 @@
       systemd:
         name: filebeat
         enabled: yes
-        state: started
+        state: restarted
 
 # Handler to reload systemd daemon after unit file change
   handlers:

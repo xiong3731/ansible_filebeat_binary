@@ -5,7 +5,7 @@ filebeat.config.inputs:
   reload.period: 10s
 
 processors:
-  - add_host_metadata:
+  - add_host_metadata: {}
 
 output.kafka:
   hosts: {{ kafka_hosts | to_json }}
