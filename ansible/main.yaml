@@ -1,0 +1,85 @@
+---
+- name: Install and configure Filebeat
+  hosts: all
+  become: yes
+  vars:
+    filebeat_version: "7.17.28"
+    cluster_name: "your_cluster_name"  # Replace with your actual cluster name
+    kafka_hosts: ["10.60.183.195:9092", "10.60.27.254:9092", "10.60.89.221:9092"]
+
+  tasks:
+    - name: Check if Filebeat archive exists on control node
+      stat:
+        path: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz"
+      delegate_to: localhost
+      register: filebeat_archive
+
+    - name: Download Filebeat on control node if not exists
+      ansible.builtin.get_url:
+        url: "https://xiong03.oss-cn-hangzhou.aliyuncs.com/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz"
+        dest: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz"
+        mode: '0644'
+      delegate_to: localhost
+      when: not filebeat_archive.stat.exists
+
+
+    - name: Copy Filebeat to target node
+      ansible.builtin.copy:
+        src: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz"
+        dest: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz"
+        mode: '0644'
+
+    - name: Extract Filebeat
+      ansible.builtin.unarchive:
+        src: "/tmp/filebeat-{{ filebeat_version }}-linux-x86_64.tar.gz"
+        dest: "/usr/local/"
+        remote_src: yes
+
+    - name: Create symlink
+      ansible.builtin.file:
+        src: "/usr/local/filebeat-{{ filebeat_version }}-linux-x86_64"
+        dest: "/usr/local/filebeat"
+        state: link
+
+    - name: Create Filebeat config directory
+      ansible.builtin.file:
+        path: /usr/local/filebeat/configs
+        state: directory
+        mode: '0755'
+
+    - name: Configure main filebeat.yml
+      ansible.builtin.template:
+        src: filebeat.yml.j2
+        dest: /usr/local/filebeat/filebeat.yml
+        mode: '0644'
+
+    - name: Configure default inputs
+      ansible.builtin.template:
+        src: default.yml.j2
+        dest: /usr/local/filebeat/configs/default.yml
+        mode: '0644'
+
+    - name: Ensure Filebeat log directory exists
+      file:
+        path: /var/log/filebeat
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Deploy filebeat.service systemd unit file
+      copy:
+        dest: /etc/systemd/system/filebeat.service
+        src: filebeat.service
+      notify: Reload systemd
+
+    - name: Enable and start filebeat service
+      systemd:
+        name: filebeat
+        enabled: yes
+        state: started
+
+# Handler to reload systemd daemon after unit file change
+  handlers:
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes

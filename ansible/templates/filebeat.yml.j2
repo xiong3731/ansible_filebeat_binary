@@ -1,0 +1,16 @@
+filebeat.config.inputs:
+  enabled: true
+  path: configs/*.yml
+  reload.enabled: true
+  reload.period: 10s
+
+processors:
+  - add_host_metadata:
+
+output.kafka:
+  hosts: {{ kafka_hosts | to_json }}
+  partition.round_robin:
+    reachable_only: true
+  topic: "%{[fields.log_topic]}"
+  required_acks: 1
+  compression: snappy
