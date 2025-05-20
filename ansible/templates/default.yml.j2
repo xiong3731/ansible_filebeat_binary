@@ -1,11 +1,10 @@
-filebeat.inputs:
   - type: journald
     id: kube-apiserver.service
     include_matches:
       - _SYSTEMD_UNIT=kube-apiserver.service
     fields:
       cluster_name: "{{ cluster_name }}"
-      node_name: ${HOSTNAME}
+      # node_name: ${HOSTNAME}
       log_topic: "kube-apiserver"
 
   - type: journald
@@ -14,7 +13,7 @@ filebeat.inputs:
       - _SYSTEMD_UNIT=kube-controller-manager.service
     fields:
       cluster_name: "{{ cluster_name }}"
-      node_name: ${HOSTNAME}
+      # node_name: ${HOSTNAME}
       log_topic: "kube-controller-manager"
 
   - type: journald
@@ -23,7 +22,7 @@ filebeat.inputs:
       - _SYSTEMD_UNIT=kube-scheduler.service
     fields:
       cluster_name: "{{ cluster_name }}"
-      node_name: ${HOSTNAME}
+      # node_name: ${HOSTNAME}
       log_topic: "kube-scheduler"
 
   - type: log
@@ -31,7 +30,7 @@ filebeat.inputs:
       - "/var/log/kubernetes/audit.log"
     fields:
       cluster_name: "{{ cluster_name }}"
-      node_name: ${HOSTNAME}
+      # node_name: ${HOSTNAME}
       log_topic: "audit"
     json.keys_under_root: true
     json.add_error_key: true
